@@ -39,7 +39,6 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
   function calculateZoneStats(alerts: Alert[], devices: Device[]): Array<{ zone: string; alertCount: number }> {
     const zoneCounts = new Map<string, number>()
     
-    // Zones par défaut
     const defaultZones = ["Zone 1 - Centre", "Zone 2 - Nord", "Zone 3 - Sud", "Zone 4 - Est", "Zone 5 - Ouest"]
     defaultZones.forEach(zone => zoneCounts.set(zone, 0))
     
@@ -65,7 +64,6 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-      {/* Carte principale agrandie */}
       <Card className="xl:col-span-3 bg-slate-900 border-slate-800">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -145,7 +143,6 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
             </div>
           </div>
 
-          {/* Légende agrandie */}
           <div className="flex items-center justify-center space-x-8 mt-6 text-base">
             <div className="flex items-center space-x-3">
               <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse" />
