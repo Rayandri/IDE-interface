@@ -64,14 +64,14 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
   const activeDevices = devices.filter((d) => d.status === "active")
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Carte principale */}
-      <Card className="lg:col-span-2 bg-slate-900 border-slate-800">
+    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      {/* Carte principale agrandie */}
+      <Card className="xl:col-span-3 bg-slate-900 border-slate-800">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <MapPin className="h-5 w-5 text-blue-500" />
-            <span>Carte de Paris - Temps Réel</span>
-            <Badge variant="outline" className="text-green-400 border-green-400">
+            <MapPin className="h-6 w-6 text-blue-500" />
+            <span className="text-xl">Carte de Paris - Temps Réel</span>
+            <Badge variant="outline" className="text-green-400 border-green-400 text-sm px-3 py-1">
               {activeAlerts.length} alertes actives
             </Badge>
           </CardTitle>
@@ -79,41 +79,42 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
         <CardContent>
           <div
             ref={mapRef}
-            className="h-96 bg-slate-800 rounded-lg relative overflow-hidden border border-slate-700"
+            className="h-[32rem] bg-slate-800 rounded-lg relative overflow-hidden border border-slate-700"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%23475569' fillOpacity='0.3'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
             }}
           >
             {/* Simulation de markers sur la carte */}
-            <div className="absolute inset-0 p-4">
-              <div className="text-center text-slate-400 mb-4">
-                <h3 className="text-lg font-semibold">Région Parisienne</h3>
-                <p className="text-sm">100 dispositifs IoT déployés</p>
+            <div className="absolute inset-0 p-6">
+              <div className="text-center text-slate-400 mb-6">
+                <h3 className="text-2xl font-semibold">Région Parisienne</h3>
+                <p className="text-lg">100 dispositifs IoT déployés</p>
               </div>
 
-              {/* Zones d'alertes simulées - Affichage optimisé 1080p */}
-              <div className="grid grid-cols-4 gap-3 h-full">
+              {/* Zones d'alertes simulées - Grille plus grande */}
+              <div className="grid grid-cols-5 gap-4 h-full">
                 {recentAlerts.map((alert, index) => (
                   <div
                     key={alert.id}
-                    className={`relative rounded-lg p-3 border-2 transition-all duration-300 ${
+                    className={`relative rounded-xl p-4 border-2 transition-all duration-300 hover:scale-105 ${
                       alert.type === "FALL_DETECTED"
-                        ? "bg-red-500/20 border-red-400 animate-pulse shadow-lg shadow-red-500/20"
-                        : "bg-orange-500/20 border-orange-400 shadow-lg shadow-orange-500/20"
+                        ? "bg-red-500/20 border-red-400 animate-pulse shadow-lg shadow-red-500/30"
+                        : "bg-orange-500/20 border-orange-400 shadow-lg shadow-orange-500/30"
                     }`}
                   >
-                    <div className="text-xs text-center">
+                    <div className="text-center">
                       <div
-                        className={`w-4 h-4 rounded-full mx-auto mb-2 ${
+                        className={`w-6 h-6 rounded-full mx-auto mb-3 ${
                           alert.type === "FALL_DETECTED" ? "bg-red-400" : "bg-orange-400"
                         } shadow-lg`}
                       />
-                      <div className="text-white font-bold text-sm">
+                      <div className="text-white font-bold text-base mb-1">
                         {alert.type === "FALL_DETECTED" ? "CHUTE" : "URGENCE"}
                       </div>
-                      <div className="text-slate-300 font-medium">{alert.deviceId.split("_")[1]}</div>
-                      <div className="text-xs text-slate-400 mt-1">
-                        {Math.round(alert.batteryLevel)}% • {Math.round(alert.signalStrength)}%
+                      <div className="text-slate-300 font-medium text-lg">{alert.deviceId.split("_")[1]}</div>
+                      <div className="text-sm text-slate-400 mt-2">
+                        <div>{Math.round(alert.batteryLevel)}%</div>
+                        <div>{Math.round(alert.signalStrength)}%</div>
                       </div>
                     </div>
                   </div>
@@ -122,62 +123,62 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
             </div>
           </div>
 
-          {/* Légende */}
-          <div className="flex items-center justify-center space-x-6 mt-4 text-sm">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-              <span className="text-slate-400">Chute détectée</span>
+          {/* Légende agrandie */}
+          <div className="flex items-center justify-center space-x-8 mt-6 text-base">
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-slate-300 font-medium">Chute détectée</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-orange-500 rounded-full" />
-              <span className="text-slate-400">Bouton d'urgence</span>
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 bg-orange-500 rounded-full" />
+              <span className="text-slate-300 font-medium">Bouton d'urgence</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full" />
-              <span className="text-slate-400">Dispositif actif</span>
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 bg-green-500 rounded-full" />
+              <span className="text-slate-300 font-medium">Dispositif actif</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Panneau d'informations */}
-      <div className="space-y-4">
+      {/* Panneau d'informations agrandi */}
+      <div className="space-y-6">
         {/* Alertes récentes */}
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
-            <CardTitle className="text-lg">Alertes Récentes</CardTitle>
+            <CardTitle className="text-xl">Alertes Récentes</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+          <CardContent className="space-y-4 max-h-[24rem] overflow-y-auto">
             {recentAlerts.map((alert) => (
               <div
                 key={alert.id}
-                className={`p-3 rounded-lg border-l-4 ${
+                className={`p-4 rounded-lg border-l-4 transition-all hover:scale-105 ${
                   alert.type === "FALL_DETECTED"
-                    ? "bg-red-900/10 border-l-red-500"
-                    : "bg-orange-900/10 border-l-orange-500"
+                    ? "bg-red-900/10 border-l-red-500 shadow-lg shadow-red-500/10"
+                    : "bg-orange-900/10 border-l-orange-500 shadow-lg shadow-orange-500/10"
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <Badge variant={alert.type === "FALL_DETECTED" ? "destructive" : "default"} className="text-xs">
+                <div className="flex items-center justify-between mb-3">
+                  <Badge variant={alert.type === "FALL_DETECTED" ? "destructive" : "default"} className="text-sm px-3 py-1">
                     {alert.type === "FALL_DETECTED" ? "CHUTE" : "URGENCE"}
                   </Badge>
-                  <span className="text-xs text-slate-400">{alert.timestamp.toLocaleTimeString()}</span>
+                  <span className="text-sm text-slate-400 font-medium">{alert.timestamp.toLocaleTimeString()}</span>
                 </div>
 
-                <div className="text-sm space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="h-3 w-3 text-slate-400" />
-                    <span className="text-slate-300">{alert.deviceId}</span>
+                <div className="text-base space-y-2">
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="h-4 w-4 text-slate-400" />
+                    <span className="text-slate-300 font-medium">{alert.deviceId}</span>
                   </div>
 
-                  <div className="flex items-center space-x-4 text-xs text-slate-400">
-                    <div className="flex items-center space-x-1">
-                      <Battery className="h-3 w-3" />
-                      <span>{Math.round(alert.batteryLevel)}%</span>
+                  <div className="flex items-center space-x-6 text-sm text-slate-400">
+                    <div className="flex items-center space-x-2">
+                      <Battery className="h-4 w-4" />
+                      <span className="font-medium">{Math.round(alert.batteryLevel)}%</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <Signal className="h-3 w-3" />
-                      <span>{Math.round(alert.signalStrength)}%</span>
+                    <div className="flex items-center space-x-2">
+                      <Signal className="h-4 w-4" />
+                      <span className="font-medium">{Math.round(alert.signalStrength)}%</span>
                     </div>
                   </div>
                 </div>
@@ -189,20 +190,20 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
         {/* Statistiques géographiques */}
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
-            <CardTitle className="text-lg">Zones d'Activité</CardTitle>
+            <CardTitle className="text-xl">Zones d'Activité</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             {calculateZoneStats(alerts, devices).map((zoneStats) => {
                 const maxAlerts = Math.max(...calculateZoneStats(alerts, devices).map(z => z.alertCount), 1)
                 const percentage = Math.round((zoneStats.alertCount / maxAlerts) * 100)
                 return (
-                  <div key={zoneStats.zone} className="flex items-center justify-between">
-                    <span className="text-sm text-slate-300">{zoneStats.zone}</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-16 h-2 bg-slate-700 rounded-full overflow-hidden border border-slate-600">
-                        <div className="h-full bg-blue-500 rounded-full" style={{ width: `${percentage}%` }} />
+                  <div key={zoneStats.zone} className="flex items-center justify-between py-2">
+                    <span className="text-base text-slate-300 font-medium">{zoneStats.zone}</span>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-20 h-3 bg-slate-700 rounded-full overflow-hidden border border-slate-600">
+                        <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${percentage}%` }} />
                       </div>
-                      <span className="text-xs text-slate-400 w-8">{zoneStats.alertCount}</span>
+                      <span className="text-sm text-slate-400 w-8 font-bold">{zoneStats.alertCount}</span>
                     </div>
                   </div>
                 )

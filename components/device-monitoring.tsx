@@ -114,7 +114,7 @@ export function DeviceMonitoring({ devices }: DeviceMonitoringProps) {
           <CardContent>
             <div className="text-2xl font-bold text-white">{statusCounts.active}</div>
             <p className="text-xs text-slate-400">
-              {((statusCounts.active / devices.length) * 100).toFixed(1)}% du total
+                              {Math.round((statusCounts.active / devices.length) * 100)}% du total
             </p>
           </CardContent>
         </Card>

@@ -222,7 +222,7 @@ export class SimulationManager {
     // Malus selon le scénario
     const scenarioMalus = this.state.params.scenario === "emergency" ? 2 : 0
     
-    return (baseReliability + stabilityBonus - scenarioMalus).toFixed(1)
+    return Math.round(baseReliability + stabilityBonus - scenarioMalus).toString()
   }
 
   reset() {

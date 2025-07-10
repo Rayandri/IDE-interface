@@ -168,80 +168,80 @@ export default function EmergencyDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+    <div className="min-h-screen bg-slate-950 text-white p-4 lg:p-6">
+      <div className="max-w-[90rem] mx-auto space-y-6">
+        {/* Header Agrandi */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-8 w-8 text-red-500" />
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-4">
+              <AlertTriangle className="h-10 w-10 text-red-500" />
               <div>
-                <h1 className="text-3xl font-bold text-white">Centre de Contrôle d'Urgence</h1>
-                <p className="text-sm text-slate-400">Développé par Rayan - Emre - Batiste - Marc </p>
+                <h1 className="text-4xl font-bold text-white">Centre de Contrôle d'Urgence</h1>
+                <p className="text-base text-slate-400">Développé par Rayan - Emre - Batiste - Marc </p>
               </div>
             </div>
-            <Badge variant="outline" className="text-green-400 border-green-400">
+            <Badge variant="outline" className="text-green-400 border-green-400 text-base px-4 py-2">
               {isSimulationRunning ? "EN LIGNE" : "HORS LIGNE"}
             </Badge>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Button onClick={toggleSimulation} variant={isSimulationRunning ? "destructive" : "default"} size="sm">
-              {isSimulationRunning ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
+          <div className="flex items-center space-x-3">
+            <Button onClick={toggleSimulation} variant={isSimulationRunning ? "destructive" : "default"} size="lg">
+              {isSimulationRunning ? <Pause className="h-5 w-5 mr-2" /> : <Play className="h-5 w-5 mr-2" />}
               {isSimulationRunning ? "Pause" : "Démarrer"}
             </Button>
-            <Button onClick={resetSimulation} variant="outline" size="sm">
-              <RotateCcw className="h-4 w-4 mr-2" />
+            <Button onClick={resetSimulation} variant="outline" size="lg">
+              <RotateCcw className="h-5 w-5 mr-2" />
               Reset
             </Button>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-slate-900 border-slate-800">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Total Alertes</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-red-500" />
+        {/* Stats Cards Agrandies */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-base font-medium text-slate-400">Total Alertes</CardTitle>
+              <AlertTriangle className="h-5 w-5 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalAlerts}</div>
-              <p className="text-xs text-slate-400">+12% depuis hier</p>
+              <div className="text-3xl font-bold text-white">{stats.totalAlerts}</div>
+              <p className="text-sm text-slate-400">+12% depuis hier</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900 border-slate-800">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Dispositifs Actifs</CardTitle>
-              <Activity className="h-4 w-4 text-green-500" />
+          <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-base font-medium text-slate-400">Dispositifs Actifs</CardTitle>
+              <Activity className="h-5 w-5 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.activeDevices}/{SIMULATION_CONFIG.DEVICE_COUNT}</div>
-              <p className="text-xs text-slate-400">{calculateActiveDevicesPercentage(devices)}% opérationnels</p>
+              <div className="text-3xl font-bold text-white">{stats.activeDevices}/{SIMULATION_CONFIG.DEVICE_COUNT}</div>
+              <p className="text-sm text-slate-400">{calculateActiveDevicesPercentage(devices)}% opérationnels</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900 border-slate-800">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Temps Réponse Moyen</CardTitle>
-              <Clock className="h-4 w-4 text-blue-500" />
+          <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-base font-medium text-slate-400">Temps Réponse Moyen</CardTitle>
+              <Clock className="h-5 w-5 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">
+              <div className="text-3xl font-bold text-white">
                 {Math.floor(stats.avgResponseTime / 60)}m {stats.avgResponseTime % 60}s
               </div>
-              <p className="text-xs text-slate-400">-15% ce mois</p>
+              <p className="text-sm text-slate-400">-15% ce mois</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900 border-slate-800">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Alertes Critiques</CardTitle>
-              <Zap className="h-4 w-4 text-orange-500" />
+          <Card className="bg-slate-900 border-slate-800 hover:bg-slate-800 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-base font-medium text-slate-400">Alertes Critiques</CardTitle>
+              <Zap className="h-5 w-5 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.criticalAlerts}</div>
-              <p className="text-xs text-slate-400">Chutes détectées</p>
+              <div className="text-3xl font-bold text-white">{stats.criticalAlerts}</div>
+              <p className="text-sm text-slate-400">Chutes détectées</p>
             </CardContent>
           </Card>
         </div>

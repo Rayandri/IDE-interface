@@ -128,10 +128,10 @@ export function AnalyticsDashboard({ alerts }: AnalyticsDashboardProps) {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">94.2%</div>
+            <div className="text-2xl font-bold text-white">94%</div>
             <div className="flex items-center space-x-1 text-xs">
               <TrendingUp className="h-3 w-3 text-green-500" />
-              <span className="text-green-500">+2.1%</span>
+              <span className="text-green-500">+2%</span>
               <span className="text-slate-400">ce mois</span>
             </div>
           </CardContent>
@@ -158,10 +158,10 @@ export function AnalyticsDashboard({ alerts }: AnalyticsDashboardProps) {
             <Activity className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">98.7%</div>
+            <div className="text-2xl font-bold text-white">99%</div>
             <div className="flex items-center space-x-1 text-xs">
               <TrendingUp className="h-3 w-3 text-green-500" />
-              <span className="text-green-500">+0.3%</span>
+              <span className="text-green-500">+1%</span>
               <span className="text-slate-400">optimal</span>
             </div>
           </CardContent>
