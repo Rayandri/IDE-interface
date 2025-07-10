@@ -23,10 +23,12 @@ import {
   updateDeviceSignal,
   calculateActiveDevicesPercentage
 } from "@/lib/utils"
+import { SimulationManager, SimulationParams } from "@/lib/simulation-manager"
 
 export default function EmergencyDashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [devices, setDevices] = useState<Device[]>([])
+  const [simulationManager] = useState(() => new SimulationManager())
   const [isSimulationRunning, setIsSimulationRunning] = useState(true)
   const [stats, setStats] = useState({
     totalAlerts: 0,
@@ -34,6 +36,11 @@ export default function EmergencyDashboard() {
     avgResponseTime: 0,
     criticalAlerts: 0,
   })
+
+  // Fonction pour mettre à jour les paramètres de simulation
+  const updateSimulationParams = (newParams: Partial<SimulationParams>) => {
+    simulationManager.updateParams(newParams)
+  }
 
   // Simulation de données en temps réel
   useEffect(() => {
@@ -89,35 +96,22 @@ export default function EmergencyDashboard() {
     })
   }, [])
 
-  // Simulation temps réel
+  // Simulation temps réel avec le gestionnaire centralisé
   useEffect(() => {
+    simulationManager.updateParams({ isRunning: isSimulationRunning })
+
     if (!isSimulationRunning) return
 
-    const interval = setInterval(() => {
-      // Nouvelle alerte aléatoire
-      if (Math.random() > (1 - SIMULATION_CONFIG.ALERT_GENERATION_PROBABILITY)) {
-        const device = devices[Math.floor(Math.random() * devices.length)]
-        if (!device) return
-        
-        const alertType: Alert["type"] = Math.random() > SIMULATION_CONFIG.FALL_DETECTION_PROBABILITY ? "FALL_DETECTED" : "BUTTON_PRESSED"
-        const newAlert: Alert = {
-          id: `alert_${Date.now()}`,
-          deviceId: device.id,
-          type: alertType,
-          timestamp: new Date(),
-          latitude: device.latitude + (Math.random() - 0.5) * GEOGRAPHIC_CONFIG.DEVICE_SPREAD,
-          longitude: device.longitude + (Math.random() - 0.5) * GEOGRAPHIC_CONFIG.DEVICE_SPREAD,
-          batteryLevel: device.batteryLevel,
-          signalStrength: device.signalStrength,
-          status: "received",
-          priority: alertType === "FALL_DETECTED" ? "critical" : "high",
-        }
-
+    const runSimulation = () => {
+      // Générer une nouvelle alerte avec le gestionnaire
+      const newAlert = simulationManager.generateAlert(devices)
+      
+      if (newAlert) {
         setAlerts((prev: Alert[]) => [newAlert, ...prev.slice(0, SIMULATION_CONFIG.MAX_ALERTS_HISTORY - 1)])
         setStats((prev: any) => ({
           ...prev,
           totalAlerts: prev.totalAlerts + 1,
-          criticalAlerts: alertType === "FALL_DETECTED" ? prev.criticalAlerts + 1 : prev.criticalAlerts,
+          criticalAlerts: newAlert.priority === "critical" ? prev.criticalAlerts + 1 : prev.criticalAlerts,
         }))
       }
 
@@ -134,17 +128,38 @@ export default function EmergencyDashboard() {
           return updatedDevice
         }),
       )
-    }, SIMULATION_CONFIG.SIMULATION_INTERVAL)
+    }
+
+    // Utiliser l'intervalle dynamique du gestionnaire
+    const intervalTime = simulationManager.getSimulationInterval()
+    const interval = setInterval(runSimulation, intervalTime)
 
     return () => clearInterval(interval)
-  }, [isSimulationRunning, devices])
+  }, [isSimulationRunning, devices, simulationManager])
 
   const toggleSimulation = () => {
     setIsSimulationRunning(!isSimulationRunning)
+    simulationManager.updateParams({ isRunning: !isSimulationRunning })
   }
 
   const resetSimulation = () => {
+    simulationManager.reset()
+    setStats({
+      totalAlerts: 0,
+      activeDevices: 0,
+      avgResponseTime: 0,
+      criticalAlerts: 0,
+    })
     window.location.reload()
+  }
+
+  const handleGenerateAlert = (alert: Alert) => {
+    setAlerts((prev: Alert[]) => [alert, ...prev.slice(0, SIMULATION_CONFIG.MAX_ALERTS_HISTORY - 1)])
+    setStats((prev: any) => ({
+      ...prev,
+      totalAlerts: prev.totalAlerts + 1,
+      criticalAlerts: alert.priority === "critical" ? prev.criticalAlerts + 1 : prev.criticalAlerts,
+    }))
   }
 
   return (
@@ -287,7 +302,10 @@ export default function EmergencyDashboard() {
               isRunning={isSimulationRunning}
               onToggle={toggleSimulation}
               onReset={resetSimulation}
-              onGenerateAlert={(alert) => setAlerts((prev) => [alert, ...prev])}
+              onGenerateAlert={handleGenerateAlert}
+              simulationManager={simulationManager}
+              onUpdateParams={updateSimulationParams}
+              devices={devices}
             />
           </TabsContent>
         </Tabs>

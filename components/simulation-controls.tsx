@@ -1,60 +1,80 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Play, Pause, RotateCcw, Zap, Settings, AlertTriangle, MapPin, Activity } from "lucide-react"
-
-interface Alert {
-  id: string
-  deviceId: string
-  type: "FALL_DETECTED" | "BUTTON_PRESSED"
-  timestamp: Date
-  latitude: number
-  longitude: number
-  batteryLevel: number
-  signalStrength: number
-  status: "received" | "in_progress" | "resolved"
-  priority: "low" | "medium" | "high" | "critical"
-}
+import { Alert, Device } from "@/lib/utils"
+import { SimulationManager, SimulationParams } from "@/lib/simulation-manager"
 
 interface SimulationControlsProps {
   isRunning: boolean
   onToggle: () => void
   onReset: () => void
   onGenerateAlert: (alert: Alert) => void
+  simulationManager: SimulationManager
+  onUpdateParams: (newParams: Partial<SimulationParams>) => void
+  devices: Device[]
 }
 
-export function SimulationControls({ isRunning, onToggle, onReset, onGenerateAlert }: SimulationControlsProps) {
+export function SimulationControls({ 
+  isRunning, 
+  onToggle, 
+  onReset, 
+  onGenerateAlert,
+  simulationManager, 
+  onUpdateParams,
+  devices 
+}: SimulationControlsProps) {
   const [alertFrequency, setAlertFrequency] = useState([3])
   const [selectedZone, setSelectedZone] = useState("random")
   const [alertType, setAlertType] = useState("random")
   const [scenario, setScenario] = useState("normal")
-  const [startTime] = useState(new Date())
-  const [totalGeneratedAlerts, setTotalGeneratedAlerts] = useState(0)
+  const [, forceUpdate] = useState({})
 
-  const calculateTotalGeneratedAlerts = () => totalGeneratedAlerts
+  // Forcer le re-render toutes les secondes pour les stats en temps réel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate({})
+    }, 1000)
 
-  const calculateUptime = () => {
-    const uptime = Date.now() - startTime.getTime()
-    const hours = Math.floor(uptime / (1000 * 60 * 60))
-    const minutes = Math.floor((uptime % (1000 * 60 * 60)) / (1000 * 60))
-    return hours > 0 ? `${hours}h${minutes}m` : `${minutes}m`
+    return () => clearInterval(interval)
+  }, [])
+
+  // Synchroniser les paramètres avec le gestionnaire
+  const updateParameter = (key: keyof SimulationParams, value: any) => {
+    const newParams = { [key]: value }
+    onUpdateParams(newParams)
+    
+    // Mettre à jour l'état local
+    switch (key) {
+      case 'alertFrequency':
+        setAlertFrequency([value])
+        break
+      case 'selectedZone':
+        setSelectedZone(value)
+        break
+      case 'alertType':
+        setAlertType(value)
+        break
+      case 'scenario':
+        setScenario(value)
+        break
+    }
   }
 
-  const calculateEventsPerHour = () => {
-    const uptime = (Date.now() - startTime.getTime()) / (1000 * 60 * 60)
-    return uptime > 0 ? Math.round(totalGeneratedAlerts / uptime) : 0
-  }
-
-  const calculateSystemReliability = () => {
-    const baseReliability = 95
-    const uptime = (Date.now() - startTime.getTime()) / (1000 * 60 * 60)
-    const stabilityBonus = Math.min(uptime * 0.1, 3)
-    return (baseReliability + stabilityBonus).toFixed(1)
+  // Utiliser les statistiques du gestionnaire
+  const getSimulationStats = () => {
+    const state = simulationManager.getState()
+    return {
+      totalGeneratedAlerts: state.stats.totalGeneratedAlerts,
+      uptime: simulationManager.getUptime(),
+      eventsPerHour: simulationManager.getEventsPerHour(),
+      systemReliability: simulationManager.getSystemReliability(),
+    }
   }
 
   const zones = [
@@ -74,80 +94,45 @@ export function SimulationControls({ isRunning, onToggle, onReset, onGenerateAle
   ]
 
   const generateTestAlert = () => {
-    const zone =
-      selectedZone === "random"
-        ? zones[Math.floor(Math.random() * (zones.length - 1)) + 1]
-        : zones.find((z) => z.id === selectedZone) || zones[0]
-
-    const type =
-      alertType === "random"
-        ? Math.random() > 0.5
-          ? "FALL_DETECTED"
-          : "BUTTON_PRESSED"
-        : (alertType as "FALL_DETECTED" | "BUTTON_PRESSED")
-
-    const newAlert: Alert = {
-      id: `test_alert_${Date.now()}`,
-      deviceId: `device_${Math.floor(Math.random() * 100) + 1}`,
-      type,
-      timestamp: new Date(),
-      latitude: zone.coords.lat + (Math.random() - 0.5) * 0.01,
-      longitude: zone.coords.lng + (Math.random() - 0.5) * 0.01,
-      batteryLevel: Math.floor(Math.random() * 100),
-      signalStrength: Math.floor(Math.random() * 100),
-      status: "received",
-      priority: type === "FALL_DETECTED" ? "critical" : "high",
+    // Utiliser le gestionnaire pour générer une alerte cohérente
+    const testAlert = simulationManager.generateAlert(devices)
+    
+    if (testAlert) {
+      // Modifier l'ID pour indiquer que c'est un test manuel
+      testAlert.id = `manual_test_${Date.now()}`
+      onGenerateAlert(testAlert)
     }
-
-    onGenerateAlert(newAlert)
-    setTotalGeneratedAlerts(prev => prev + 1)
   }
 
   const runScenario = (scenarioId: string) => {
-    setScenario(scenarioId)
+    updateParameter('scenario', scenarioId)
 
     switch (scenarioId) {
       case "peak":
-        // Générer plusieurs alertes rapidement
-        for (let i = 0; i < 5; i++) {
-          setTimeout(() => generateTestAlert(), i * 1000)
-        }
+        // Mode heure de pointe : fréquence élevée
+        updateParameter('alertFrequency', 1)
+        updateParameter('customAlertProbability', 0.8)
         break
       case "emergency":
-        // Générer des alertes critiques
-        for (let i = 0; i < 3; i++) {
-          setTimeout(() => {
-            const emergencyAlert: Alert = {
-              id: `emergency_${Date.now()}_${i}`,
-              deviceId: `device_${Math.floor(Math.random() * 100) + 1}`,
-              type: "FALL_DETECTED",
-              timestamp: new Date(),
-              latitude: 48.8566 + (Math.random() - 0.5) * 0.01,
-              longitude: 2.3522 + (Math.random() - 0.5) * 0.01,
-              batteryLevel: Math.floor(Math.random() * 100),
-              signalStrength: Math.floor(Math.random() * 100),
-              status: "received",
-              priority: "critical",
-            }
-            onGenerateAlert(emergencyAlert)
-          }, i * 500)
-        }
+        // Mode urgence : beaucoup de chutes critiques
+        updateParameter('alertFrequency', 2)
+        updateParameter('alertType', 'FALL_DETECTED')
+        updateParameter('customAlertProbability', 0.9)
+        updateParameter('customFallProbability', 0.8)
         break
       case "maintenance":
-        // Générer des alertes de test
-        const testAlert: Alert = {
-          id: `maintenance_${Date.now()}`,
-          deviceId: "device_test",
-          type: "BUTTON_PRESSED",
-          timestamp: new Date(),
-          latitude: 48.8566,
-          longitude: 2.3522,
-          batteryLevel: 100,
-          signalStrength: 100,
-          status: "received",
-          priority: "low",
-        }
-        onGenerateAlert(testAlert)
+        // Mode maintenance : alertes moins fréquentes, principalement boutons
+        updateParameter('alertFrequency', 5)
+        updateParameter('alertType', 'BUTTON_PRESSED')
+        updateParameter('customAlertProbability', 0.3)
+        break
+      case "normal":
+      default:
+        // Retour aux paramètres normaux
+        updateParameter('alertFrequency', 3)
+        updateParameter('alertType', 'random')
+        updateParameter('customAlertProbability', undefined)
+        updateParameter('customFallProbability', undefined)
         break
     }
   }
@@ -189,7 +174,7 @@ export function SimulationControls({ isRunning, onToggle, onReset, onGenerateAle
                 </label>
                 <Slider
                   value={alertFrequency}
-                  onValueChange={setAlertFrequency}
+                  onValueChange={(value) => updateParameter('alertFrequency', value[0])}
                   max={10}
                   min={1}
                   step={1}
@@ -202,7 +187,7 @@ export function SimulationControls({ isRunning, onToggle, onReset, onGenerateAle
 
               <div>
                 <label className="text-sm font-medium text-slate-300 mb-2 block">Zone Géographique</label>
-                <Select value={selectedZone} onValueChange={setSelectedZone}>
+                <Select value={selectedZone} onValueChange={(value) => updateParameter('selectedZone', value)}>
                   <SelectTrigger className="bg-slate-800 border-slate-700">
                     <MapPin className="h-4 w-4 mr-2" />
                     <SelectValue />
@@ -221,7 +206,7 @@ export function SimulationControls({ isRunning, onToggle, onReset, onGenerateAle
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-slate-300 mb-2 block">Type d'Alerte</label>
-                <Select value={alertType} onValueChange={setAlertType}>
+                <Select value={alertType} onValueChange={(value) => updateParameter('alertType', value)}>
                   <SelectTrigger className="bg-slate-800 border-slate-700">
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     <SelectValue />
@@ -296,22 +281,22 @@ export function SimulationControls({ isRunning, onToggle, onReset, onGenerateAle
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-slate-800 rounded-lg border border-slate-700">
-              <div className="text-2xl font-bold text-blue-400">{calculateTotalGeneratedAlerts()}</div>
+              <div className="text-2xl font-bold text-blue-400">{getSimulationStats().totalGeneratedAlerts}</div>
               <div className="text-sm text-slate-300">Alertes Générées</div>
             </div>
 
             <div className="text-center p-4 bg-slate-800 rounded-lg border border-slate-700">
-              <div className="text-2xl font-bold text-green-400">{calculateUptime()}</div>
+              <div className="text-2xl font-bold text-green-400">{getSimulationStats().uptime}</div>
               <div className="text-sm text-slate-300">Temps d'Activité</div>
             </div>
 
             <div className="text-center p-4 bg-slate-800 rounded-lg border border-slate-700">
-              <div className="text-2xl font-bold text-orange-400">{calculateEventsPerHour()}</div>
+              <div className="text-2xl font-bold text-orange-400">{getSimulationStats().eventsPerHour}</div>
               <div className="text-sm text-slate-300">Événements/Heure</div>
             </div>
 
             <div className="text-center p-4 bg-slate-800 rounded-lg border border-slate-700">
-              <div className="text-2xl font-bold text-purple-400">{calculateSystemReliability()}%</div>
+              <div className="text-2xl font-bold text-purple-400">{getSimulationStats().systemReliability}%</div>
               <div className="text-sm text-slate-300">Fiabilité Système</div>
             </div>
           </div>
