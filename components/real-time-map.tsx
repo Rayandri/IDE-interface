@@ -36,6 +36,26 @@ interface RealTimeMapProps {
 }
 
 export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
+  function calculateZoneStats(alerts: Alert[], devices: Device[]): Array<{ zone: string; alertCount: number }> {
+    const zoneCounts = new Map<string, number>()
+    
+    // Zones par défaut
+    const defaultZones = ["Zone 1 - Centre", "Zone 2 - Nord", "Zone 3 - Sud", "Zone 4 - Est", "Zone 5 - Ouest"]
+    defaultZones.forEach(zone => zoneCounts.set(zone, 0))
+    
+    alerts.forEach(alert => {
+      const device = devices.find(d => d.id === alert.deviceId)
+      if (device) {
+        const currentCount = zoneCounts.get(device.zone) || 0
+        zoneCounts.set(device.zone, currentCount + 1)
+      }
+    })
+
+    return Array.from(zoneCounts.entries()).map(([zone, alertCount]) => ({
+      zone,
+      alertCount
+    }))
+  }
   const mapRef = useRef<HTMLDivElement>(null)
 
   // Simulation d'une carte interactive
@@ -171,22 +191,21 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
             <CardTitle className="text-lg">Zones d'Activité</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {["Zone 1 - Centre", "Zone 2 - Nord", "Zone 3 - Sud", "Zone 4 - Est", "Zone 5 - Ouest"].map(
-              (zone, index) => {
-                const alertCount = Math.floor(Math.random() * 10) + 1
-                const percentage = Math.round((alertCount / 10) * 100)
+            {calculateZoneStats(alerts, devices).map((zoneStats) => {
+                const maxAlerts = Math.max(...calculateZoneStats(alerts, devices).map(z => z.alertCount), 1)
+                const percentage = Math.round((zoneStats.alertCount / maxAlerts) * 100)
                 return (
-                  <div key={zone} className="flex items-center justify-between">
-                    <span className="text-sm text-slate-300">{zone}</span>
+                  <div key={zoneStats.zone} className="flex items-center justify-between">
+                    <span className="text-sm text-slate-300">{zoneStats.zone}</span>
                     <div className="flex items-center space-x-2">
                       <div className="w-16 h-2 bg-slate-700 rounded-full overflow-hidden border border-slate-600">
                         <div className="h-full bg-blue-500 rounded-full" style={{ width: `${percentage}%` }} />
                       </div>
-                      <span className="text-xs text-slate-400 w-8">{alertCount}</span>
+                      <span className="text-xs text-slate-400 w-8">{zoneStats.alertCount}</span>
                     </div>
                   </div>
                 )
-              },
+              }
             )}
           </CardContent>
         </Card>

@@ -48,26 +48,60 @@ export function AnalyticsDashboard({ alerts }: AnalyticsDashboardProps) {
     }).length
     return {
       hour: `${hour}h`,
-      alerts: hourAlerts + Math.floor(Math.random() * 5), // Simulation de données historiques
+      alerts: hourAlerts,
     }
   })
 
   const responseTimeData = [
-    { time: "00h-04h", avgTime: 180 },
-    { time: "04h-08h", avgTime: 165 },
-    { time: "08h-12h", avgTime: 145 },
-    { time: "12h-16h", avgTime: 160 },
-    { time: "16h-20h", avgTime: 175 },
-    { time: "20h-24h", avgTime: 155 },
+    { time: "00h-04h", avgTime: calculateAvgResponseTimeForPeriod(alerts, 0, 4) },
+    { time: "04h-08h", avgTime: calculateAvgResponseTimeForPeriod(alerts, 4, 8) },
+    { time: "08h-12h", avgTime: calculateAvgResponseTimeForPeriod(alerts, 8, 12) },
+    { time: "12h-16h", avgTime: calculateAvgResponseTimeForPeriod(alerts, 12, 16) },
+    { time: "16h-20h", avgTime: calculateAvgResponseTimeForPeriod(alerts, 16, 20) },
+    { time: "20h-24h", avgTime: calculateAvgResponseTimeForPeriod(alerts, 20, 24) },
   ]
 
-  const zoneData = [
-    { zone: "Zone 1", alerts: 25, trend: "up" },
-    { zone: "Zone 2", alerts: 18, trend: "down" },
-    { zone: "Zone 3", alerts: 32, trend: "up" },
-    { zone: "Zone 4", alerts: 14, trend: "stable" },
-    { zone: "Zone 5", alerts: 21, trend: "up" },
-  ]
+  const zoneData = calculateZoneAlerts(alerts)
+
+  function calculateAvgResponseTimeForPeriod(alerts: Alert[], startHour: number, endHour: number): number {
+    const periodAlerts = alerts.filter(alert => {
+      const hour = alert.timestamp.getHours()
+      return hour >= startHour && hour < endHour
+    })
+    
+    if (periodAlerts.length === 0) return 0
+    
+    const baseTime = {
+      critical: 120,
+      high: 180,
+      medium: 300,
+      low: 600
+    }
+    
+    const totalTime = periodAlerts.reduce((sum, alert) => {
+      return sum + (baseTime[alert.priority] || 300)
+    }, 0)
+    
+    return Math.round(totalTime / periodAlerts.length)
+  }
+
+  function calculateZoneAlerts(alerts: Alert[]): Array<{ zone: string; alerts: number; trend: "up" | "down" | "stable" }> {
+    const zoneCounts = new Map<string, number>()
+    
+    // Simuler la zone basée sur l'ID du dispositif pour la compatibilité
+    alerts.forEach(alert => {
+      const deviceNumber = parseInt(alert.deviceId.split('_')[1] || '1')
+      const zoneNumber = Math.floor((deviceNumber - 1) / 20) + 1
+      const zoneName = `Zone ${zoneNumber}`
+      zoneCounts.set(zoneName, (zoneCounts.get(zoneName) || 0) + 1)
+    })
+
+    return Array.from(zoneCounts.entries()).map(([zone, alertCount]) => ({
+      zone,
+      alerts: alertCount,
+      trend: alertCount > 8 ? "up" : alertCount < 3 ? "down" : "stable" as const
+    }))
+  }
 
   return (
     <div className="space-y-6">

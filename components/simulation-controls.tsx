@@ -33,6 +33,29 @@ export function SimulationControls({ isRunning, onToggle, onReset, onGenerateAle
   const [selectedZone, setSelectedZone] = useState("random")
   const [alertType, setAlertType] = useState("random")
   const [scenario, setScenario] = useState("normal")
+  const [startTime] = useState(new Date())
+  const [totalGeneratedAlerts, setTotalGeneratedAlerts] = useState(0)
+
+  const calculateTotalGeneratedAlerts = () => totalGeneratedAlerts
+
+  const calculateUptime = () => {
+    const uptime = Date.now() - startTime.getTime()
+    const hours = Math.floor(uptime / (1000 * 60 * 60))
+    const minutes = Math.floor((uptime % (1000 * 60 * 60)) / (1000 * 60))
+    return hours > 0 ? `${hours}h${minutes}m` : `${minutes}m`
+  }
+
+  const calculateEventsPerHour = () => {
+    const uptime = (Date.now() - startTime.getTime()) / (1000 * 60 * 60)
+    return uptime > 0 ? Math.round(totalGeneratedAlerts / uptime) : 0
+  }
+
+  const calculateSystemReliability = () => {
+    const baseReliability = 95
+    const uptime = (Date.now() - startTime.getTime()) / (1000 * 60 * 60)
+    const stabilityBonus = Math.min(uptime * 0.1, 3)
+    return (baseReliability + stabilityBonus).toFixed(1)
+  }
 
   const zones = [
     { id: "random", name: "Aléatoire", coords: { lat: 48.8566, lng: 2.3522 } },
@@ -77,6 +100,7 @@ export function SimulationControls({ isRunning, onToggle, onReset, onGenerateAle
     }
 
     onGenerateAlert(newAlert)
+    setTotalGeneratedAlerts(prev => prev + 1)
   }
 
   const runScenario = (scenarioId: string) => {
@@ -272,22 +296,22 @@ export function SimulationControls({ isRunning, onToggle, onReset, onGenerateAle
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-slate-800 rounded-lg border border-slate-700">
-              <div className="text-2xl font-bold text-blue-400">{Math.floor(Math.random() * 1000) + 500}</div>
+              <div className="text-2xl font-bold text-blue-400">{calculateTotalGeneratedAlerts()}</div>
               <div className="text-sm text-slate-300">Alertes Générées</div>
             </div>
 
             <div className="text-center p-4 bg-slate-800 rounded-lg border border-slate-700">
-              <div className="text-2xl font-bold text-green-400">{Math.floor(Math.random() * 24) + 1}h</div>
+              <div className="text-2xl font-bold text-green-400">{calculateUptime()}</div>
               <div className="text-sm text-slate-300">Temps d'Activité</div>
             </div>
 
             <div className="text-center p-4 bg-slate-800 rounded-lg border border-slate-700">
-              <div className="text-2xl font-bold text-orange-400">{Math.floor(Math.random() * 50) + 10}</div>
+              <div className="text-2xl font-bold text-orange-400">{calculateEventsPerHour()}</div>
               <div className="text-sm text-slate-300">Événements/Heure</div>
             </div>
 
             <div className="text-center p-4 bg-slate-800 rounded-lg border border-slate-700">
-              <div className="text-2xl font-bold text-purple-400">{(Math.random() * 5 + 95).toFixed(1)}%</div>
+              <div className="text-2xl font-bold text-purple-400">{calculateSystemReliability()}%</div>
               <div className="text-sm text-slate-300">Fiabilité Système</div>
             </div>
           </div>

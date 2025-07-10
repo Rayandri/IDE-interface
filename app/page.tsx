@@ -11,32 +11,18 @@ import { AnalyticsDashboard } from "@/components/analytics-dashboard"
 import { EmergencyQueue } from "@/components/emergency-queue"
 import { DeviceMonitoring } from "@/components/device-monitoring"
 import { SimulationControls } from "@/components/simulation-controls"
-
-// Types pour les données
-interface Alert {
-  id: string
-  deviceId: string
-  type: "FALL_DETECTED" | "BUTTON_PRESSED"
-  timestamp: Date
-  latitude: number
-  longitude: number
-  batteryLevel: number
-  signalStrength: number
-  status: "received" | "in_progress" | "resolved"
-  priority: "low" | "medium" | "high" | "critical"
-}
-
-interface Device {
-  id: string
-  name: string
-  latitude: number
-  longitude: number
-  batteryLevel: number
-  signalStrength: number
-  lastActivity: Date
-  status: "active" | "inactive" | "low_battery" | "weak_signal"
-  zone: string
-}
+import { SIMULATION_CONFIG, GEOGRAPHIC_CONFIG, DEVICE_THRESHOLDS } from "@/lib/constants"
+import { 
+  Alert, 
+  Device, 
+  calculateDeviceStatus, 
+  calculateResponseTime, 
+  calculateZoneForDevice,
+  generateDevicePosition,
+  updateDeviceBattery,
+  updateDeviceSignal,
+  calculateActiveDevicesPercentage
+} from "@/lib/utils"
 
 export default function EmergencyDashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([])
@@ -51,24 +37,34 @@ export default function EmergencyDashboard() {
 
   // Simulation de données en temps réel
   useEffect(() => {
-    // Initialisation des dispositifs (100 dans Paris)
-    const initDevices = Array.from({ length: 100 }, (_, i) => ({
-      id: `device_${i + 1}`,
-      name: `Dispositif ${i + 1}`,
-      latitude: 48.8566 + (Math.random() - 0.5) * 0.1, // Paris ±5km
-      longitude: 2.3522 + (Math.random() - 0.5) * 0.1,
-      batteryLevel: Math.floor(Math.random() * 100),
-      signalStrength: Math.floor(Math.random() * 100),
-      lastActivity: new Date(Date.now() - Math.random() * 3600000),
-      status: Math.random() > 0.8 ? "inactive" : ("active" as Device["status"]),
-      zone: `Zone ${Math.floor(i / 20) + 1}`,
-    }))
+    // Initialisation des dispositifs avec logique cohérente
+    const initDevices = Array.from({ length: SIMULATION_CONFIG.DEVICE_COUNT }, (_, i) => {
+      const zoneIndex = Math.floor(i / 20)
+      const position = generateDevicePosition(zoneIndex)
+      const batteryLevel = Math.floor(Math.random() * 80) + 20 // 20-100%
+      const signalStrength = Math.floor(Math.random() * 70) + 30 // 30-100%
+      
+      const device: Device = {
+        id: `device_${i + 1}`,
+        name: `Dispositif ${i + 1}`,
+        latitude: position.lat,
+        longitude: position.lng,
+        batteryLevel,
+        signalStrength,
+        lastActivity: new Date(Date.now() - Math.random() * 3600000),
+        status: "active",
+        zone: calculateZoneForDevice(i),
+      }
+      
+      device.status = calculateDeviceStatus(device)
+      return device
+    })
     setDevices(initDevices)
 
     // Génération d'alertes initiales
     const initAlerts = Array.from({ length: 15 }, (_, i) => {
       const device = initDevices[Math.floor(Math.random() * initDevices.length)]
-      const alertType = Math.random() > 0.6 ? "FALL_DETECTED" : "BUTTON_PRESSED"
+      const alertType: Alert["type"] = Math.random() > SIMULATION_CONFIG.FALL_DETECTION_PROBABILITY ? "FALL_DETECTED" : "BUTTON_PRESSED"
       return {
         id: `alert_${i + 1}`,
         deviceId: device.id,
@@ -84,11 +80,11 @@ export default function EmergencyDashboard() {
     })
     setAlerts(initAlerts)
 
-    // Mise à jour des statistiques
+    // Mise à jour des statistiques avec calculs réels
     setStats({
       totalAlerts: initAlerts.length,
       activeDevices: initDevices.filter((d) => d.status === "active").length,
-      avgResponseTime: Math.floor(Math.random() * 300 + 120), // 2-7 minutes
+      avgResponseTime: calculateResponseTime(initAlerts),
       criticalAlerts: initAlerts.filter((a) => a.priority === "critical").length,
     })
   }, [])
@@ -99,40 +95,46 @@ export default function EmergencyDashboard() {
 
     const interval = setInterval(() => {
       // Nouvelle alerte aléatoire
-      if (Math.random() > 0.7) {
+      if (Math.random() > (1 - SIMULATION_CONFIG.ALERT_GENERATION_PROBABILITY)) {
         const device = devices[Math.floor(Math.random() * devices.length)]
-        const alertType = Math.random() > 0.6 ? "FALL_DETECTED" : "BUTTON_PRESSED"
+        if (!device) return
+        
+        const alertType: Alert["type"] = Math.random() > SIMULATION_CONFIG.FALL_DETECTION_PROBABILITY ? "FALL_DETECTED" : "BUTTON_PRESSED"
         const newAlert: Alert = {
           id: `alert_${Date.now()}`,
           deviceId: device.id,
           type: alertType,
           timestamp: new Date(),
-          latitude: device.latitude + (Math.random() - 0.5) * 0.001,
-          longitude: device.longitude + (Math.random() - 0.5) * 0.001,
+          latitude: device.latitude + (Math.random() - 0.5) * GEOGRAPHIC_CONFIG.DEVICE_SPREAD,
+          longitude: device.longitude + (Math.random() - 0.5) * GEOGRAPHIC_CONFIG.DEVICE_SPREAD,
           batteryLevel: device.batteryLevel,
           signalStrength: device.signalStrength,
           status: "received",
           priority: alertType === "FALL_DETECTED" ? "critical" : "high",
         }
 
-        setAlerts((prev) => [newAlert, ...prev.slice(0, 49)]) // Garder 50 alertes max
-        setStats((prev) => ({
+        setAlerts((prev: Alert[]) => [newAlert, ...prev.slice(0, SIMULATION_CONFIG.MAX_ALERTS_HISTORY - 1)])
+        setStats((prev: any) => ({
           ...prev,
           totalAlerts: prev.totalAlerts + 1,
           criticalAlerts: alertType === "FALL_DETECTED" ? prev.criticalAlerts + 1 : prev.criticalAlerts,
         }))
       }
 
-      // Mise à jour des dispositifs
-      setDevices((prev) =>
-        prev.map((device) => ({
-          ...device,
-          batteryLevel: Math.max(0, device.batteryLevel - Math.random() * 0.1),
-          signalStrength: Math.max(20, device.signalStrength + (Math.random() - 0.5) * 5),
-          status: device.batteryLevel < 20 ? "low_battery" : device.signalStrength < 30 ? "weak_signal" : "active",
-        })),
+      // Mise à jour des dispositifs avec logique cohérente
+      setDevices((prev: Device[]) =>
+        prev.map((device: Device) => {
+          const updatedDevice = {
+            ...device,
+            batteryLevel: updateDeviceBattery(device.batteryLevel),
+            signalStrength: updateDeviceSignal(device.signalStrength),
+            lastActivity: Math.random() > 0.9 ? new Date() : device.lastActivity,
+          }
+          updatedDevice.status = calculateDeviceStatus(updatedDevice)
+          return updatedDevice
+        }),
       )
-    }, 3000)
+    }, SIMULATION_CONFIG.SIMULATION_INTERVAL)
 
     return () => clearInterval(interval)
   }, [isSimulationRunning, devices])
@@ -194,8 +196,8 @@ export default function EmergencyDashboard() {
               <Activity className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.activeDevices}/100</div>
-              <p className="text-xs text-slate-400">98% opérationnels</p>
+              <div className="text-2xl font-bold text-white">{stats.activeDevices}/{SIMULATION_CONFIG.DEVICE_COUNT}</div>
+              <p className="text-xs text-slate-400">{calculateActiveDevicesPercentage(devices)}% opérationnels</p>
             </CardContent>
           </Card>
 
