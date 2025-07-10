@@ -7,8 +7,8 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Centre de Contrôle d'Urgence IoT",
-  description: "Système d'Alertes d'Urgence IoT - Développé par Rayan Drissi EPITA",
-    generator: 'Rayan Drissi'
+  description: "Système d'Alertes d'Urgence IoT - Développé par Rayan Drissi et son groupe",
+    generator: 'Rayan Drissi et son groupe'
 }
 
 export default function RootLayout({

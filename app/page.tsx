@@ -155,7 +155,7 @@ export default function EmergencyDashboard() {
               <AlertTriangle className="h-8 w-8 text-red-500" />
               <div>
                 <h1 className="text-3xl font-bold text-white">Centre de Contrôle d'Urgence</h1>
-                <p className="text-sm text-slate-400">Développé par Rayan Drissi - EPITA</p>
+                <p className="text-sm text-slate-400">Développé par Rayan - Emre - Batiste - Marc </p>
               </div>
             </div>
             <Badge variant="outline" className="text-green-400 border-green-400">
