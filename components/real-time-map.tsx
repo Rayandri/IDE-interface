@@ -60,6 +60,7 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
 
   // Simulation d'une carte interactive
   const recentAlerts = alerts.slice(0, 10)
+  const activeAlerts = alerts.filter(alert => alert.status === "received" || alert.status === "in_progress")
   const activeDevices = devices.filter((d) => d.status === "active")
 
   return (
@@ -71,7 +72,7 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
             <MapPin className="h-5 w-5 text-blue-500" />
             <span>Carte de Paris - Temps Réel</span>
             <Badge variant="outline" className="text-green-400 border-green-400">
-              {recentAlerts.length} alertes actives
+              {activeAlerts.length} alertes actives
             </Badge>
           </CardTitle>
         </CardHeader>

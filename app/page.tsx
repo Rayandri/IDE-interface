@@ -44,21 +44,29 @@ export default function EmergencyDashboard() {
 
   // Simulation de données en temps réel
   useEffect(() => {
-    // Initialisation des dispositifs avec logique cohérente
+    // Initialisation des dispositifs avec plus de variabilité
     const initDevices = Array.from({ length: SIMULATION_CONFIG.DEVICE_COUNT }, (_, i) => {
       const zoneIndex = Math.floor(i / 20)
       const position = generateDevicePosition(zoneIndex)
-      const batteryLevel = Math.floor(Math.random() * 80) + 20 // 20-100%
-      const signalStrength = Math.floor(Math.random() * 70) + 30 // 30-100%
+      
+      // Plus de variabilité sur les niveaux
+      const batteryLevel = Math.floor(Math.random() * 90) + 10 // 10-100%
+      const signalStrength = Math.floor(Math.random() * 80) + 20 // 20-100%
+      
+      // Variabilité sur l'activité récente (0-24h)
+      const lastActivityOffset = Math.random() * 24 * 3600000 // 0-24h en millisecondes
+      
+      // Ajouter plus de spread sur les positions
+      const positionVariation = (Math.random() - 0.5) * 0.02 // ±0.01 degrés
       
       const device: Device = {
         id: `device_${i + 1}`,
         name: `Dispositif ${i + 1}`,
-        latitude: position.lat,
-        longitude: position.lng,
+        latitude: position.lat + positionVariation,
+        longitude: position.lng + positionVariation,
         batteryLevel,
         signalStrength,
-        lastActivity: new Date(Date.now() - Math.random() * 3600000),
+        lastActivity: new Date(Date.now() - lastActivityOffset),
         status: "active",
         zone: calculateZoneForDevice(i),
       }
@@ -68,23 +76,8 @@ export default function EmergencyDashboard() {
     })
     setDevices(initDevices)
 
-    // Génération d'alertes initiales
-    const initAlerts = Array.from({ length: 15 }, (_, i) => {
-      const device = initDevices[Math.floor(Math.random() * initDevices.length)]
-      const alertType: Alert["type"] = Math.random() > SIMULATION_CONFIG.FALL_DETECTION_PROBABILITY ? "FALL_DETECTED" : "BUTTON_PRESSED"
-      return {
-        id: `alert_${i + 1}`,
-        deviceId: device.id,
-        type: alertType,
-        timestamp: new Date(Date.now() - Math.random() * 7200000),
-        latitude: device.latitude,
-        longitude: device.longitude,
-        batteryLevel: device.batteryLevel,
-        signalStrength: device.signalStrength,
-        status: ["received", "in_progress", "resolved"][Math.floor(Math.random() * 3)] as Alert["status"],
-        priority: alertType === "FALL_DETECTED" ? "critical" : ("high" as Alert["priority"]),
-      }
-    })
+    // Commencer sans alertes pour une simulation propre
+    const initAlerts: Alert[] = []
     setAlerts(initAlerts)
 
     // Mise à jour des statistiques avec calculs réels
@@ -115,15 +108,27 @@ export default function EmergencyDashboard() {
         }))
       }
 
-      // Mise à jour des dispositifs avec logique cohérente
+      // Mise à jour des dispositifs avec plus de variabilité
       setDevices((prev: Device[]) =>
         prev.map((device: Device) => {
+          // Plus de variabilité dans l'activité
+          const activityChance = Math.random()
+          const isActive = activityChance > 0.85 // 15% de chance d'activité
+          const isMaintenance = activityChance < 0.01 // 1% de chance de maintenance
+          
           const updatedDevice = {
             ...device,
             batteryLevel: updateDeviceBattery(device.batteryLevel),
             signalStrength: updateDeviceSignal(device.signalStrength),
-            lastActivity: Math.random() > 0.9 ? new Date() : device.lastActivity,
+            lastActivity: isActive ? new Date() : device.lastActivity,
           }
+          
+          // Forcer un statut pour la maintenance occasionnelle
+          if (isMaintenance) {
+            updatedDevice.batteryLevel = Math.min(100, updatedDevice.batteryLevel + 10) // Recharge partielle
+            updatedDevice.signalStrength = Math.min(100, updatedDevice.signalStrength + 5) // Amélioration signal
+          }
+          
           updatedDevice.status = calculateDeviceStatus(updatedDevice)
           return updatedDevice
         }),

@@ -71,13 +71,23 @@ export function generateDevicePosition(zoneIndex: number): { lat: number; lng: n
 }
 
 export function updateDeviceBattery(currentLevel: number): number {
-  const drain = DEVICE_THRESHOLDS.BATTERY_DRAIN_RATE + (Math.random() * 0.02)
-  return Math.max(0, currentLevel - drain)
+  // Plus de variabilité dans la décharge de batterie
+  const baseDrain = DEVICE_THRESHOLDS.BATTERY_DRAIN_RATE
+  const randomDrain = Math.random() * 0.05 // 0 à 0.05%
+  const occasionalSpike = Math.random() > 0.95 ? Math.random() * 0.3 : 0 // Pic occasionnel
+  
+  const totalDrain = baseDrain + randomDrain + occasionalSpike
+  return Math.max(0, currentLevel - totalDrain)
 }
 
 export function updateDeviceSignal(currentStrength: number): number {
-  const variation = (Math.random() - 0.5) * DEVICE_THRESHOLDS.SIGNAL_VARIATION_RANGE
-  return Math.max(DEVICE_THRESHOLDS.SIGNAL_CRITICAL, Math.min(100, currentStrength + variation))
+  // Plus de variabilité dans les fluctuations de signal
+  const baseVariation = (Math.random() - 0.5) * DEVICE_THRESHOLDS.SIGNAL_VARIATION_RANGE
+  const occasionalInterference = Math.random() > 0.9 ? (Math.random() - 0.5) * 15 : 0 // Interférence occasionnelle
+  const weatherEffect = Math.random() > 0.98 ? (Math.random() - 0.5) * 25 : 0 // Effet météo rare
+  
+  const totalVariation = baseVariation + occasionalInterference + weatherEffect
+  return Math.max(DEVICE_THRESHOLDS.SIGNAL_CRITICAL, Math.min(100, currentStrength + totalVariation))
 }
 
 export function calculateActiveDevicesPercentage(devices: Device[]): number {

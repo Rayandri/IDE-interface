@@ -115,15 +115,20 @@ export class SimulationManager {
     // Déterminer la priorité basée sur le scénario
     const priority = this.getAlertPriority(alertType)
 
+    // Ajouter plus de variabilité dans les alertes
+    const batteryVariation = (Math.random() - 0.5) * 20 // ±10%
+    const signalVariation = (Math.random() - 0.5) * 30 // ±15%
+    const positionSpread = GEOGRAPHIC_CONFIG.DEVICE_SPREAD * (1 + Math.random() * 2) // 1x à 3x plus de spread
+    
     const alert: Alert = {
       id: `sim_alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       deviceId: device.id,
       type: alertType,
       timestamp: new Date(),
-      latitude: device.latitude + (Math.random() - 0.5) * GEOGRAPHIC_CONFIG.DEVICE_SPREAD,
-      longitude: device.longitude + (Math.random() - 0.5) * GEOGRAPHIC_CONFIG.DEVICE_SPREAD,
-      batteryLevel: device.batteryLevel,
-      signalStrength: device.signalStrength,
+      latitude: device.latitude + (Math.random() - 0.5) * positionSpread,
+      longitude: device.longitude + (Math.random() - 0.5) * positionSpread,
+      batteryLevel: Math.max(0, Math.min(100, device.batteryLevel + batteryVariation)),
+      signalStrength: Math.max(0, Math.min(100, device.signalStrength + signalVariation)),
       status: "received",
       priority,
     }
