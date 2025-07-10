@@ -58,8 +58,9 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
   }
   const mapRef = useRef<HTMLDivElement>(null)
 
-  // Simulation d'une carte interactive
-  const recentAlerts = alerts.slice(0, 10)
+  // Affichage fixe de 10 emplacements
+  const displaySlots = 10
+  const recentAlerts = alerts.slice(0, displaySlots)
   const activeAlerts = alerts.filter(alert => alert.status === "received" || alert.status === "in_progress")
   const activeDevices = devices.filter((d) => d.status === "active")
 
@@ -89,36 +90,64 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
               <div className="text-center text-slate-400 mb-6">
                 <h3 className="text-2xl font-semibold">Région Parisienne</h3>
                 <p className="text-lg">100 dispositifs IoT déployés</p>
+                <p className="text-sm text-slate-500">
+                  Affichage: {recentAlerts.length}/{displaySlots} emplacements • {Math.max(0, alerts.length - displaySlots)} en attente
+                </p>
               </div>
 
-              {/* Zones d'alertes simulées - Grille plus grande */}
+              {/* Grille fixe de 10 emplacements - 2 lignes de 5 */}
               <div className="grid grid-cols-5 gap-4 h-full">
-                {recentAlerts.map((alert, index) => (
-                  <div
-                    key={alert.id}
-                    className={`relative rounded-xl p-4 border-2 transition-all duration-300 hover:scale-105 ${
-                      alert.type === "FALL_DETECTED"
-                        ? "bg-red-500/20 border-red-400 animate-pulse shadow-lg shadow-red-500/30"
-                        : "bg-orange-500/20 border-orange-400 shadow-lg shadow-orange-500/30"
-                    }`}
-                  >
-                    <div className="text-center">
+                {Array.from({ length: displaySlots }, (_, index) => {
+                  const alert = recentAlerts[index]
+                  
+                  if (alert) {
+                    // Emplacement avec alerte
+                    return (
                       <div
-                        className={`w-6 h-6 rounded-full mx-auto mb-3 ${
-                          alert.type === "FALL_DETECTED" ? "bg-red-400" : "bg-orange-400"
-                        } shadow-lg`}
-                      />
-                      <div className="text-white font-bold text-base mb-1">
-                        {alert.type === "FALL_DETECTED" ? "CHUTE" : "URGENCE"}
+                        key={alert.id}
+                        className={`relative rounded-xl p-4 border-2 transition-all duration-300 hover:scale-105 ${
+                          alert.type === "FALL_DETECTED"
+                            ? "bg-red-500/20 border-red-400 animate-pulse shadow-lg shadow-red-500/30"
+                            : "bg-orange-500/20 border-orange-400 shadow-lg shadow-orange-500/30"
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div
+                            className={`w-6 h-6 rounded-full mx-auto mb-3 ${
+                              alert.type === "FALL_DETECTED" ? "bg-red-400" : "bg-orange-400"
+                            } shadow-lg`}
+                          />
+                          <div className="text-white font-bold text-base mb-1">
+                            {alert.type === "FALL_DETECTED" ? "CHUTE" : "URGENCE"}
+                          </div>
+                          <div className="text-slate-300 font-medium text-lg">{alert.deviceId.split("_")[1]}</div>
+                          <div className="text-sm text-slate-400 mt-2">
+                            <div>{Math.round(alert.batteryLevel)}%</div>
+                            <div>{Math.round(alert.signalStrength)}%</div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-slate-300 font-medium text-lg">{alert.deviceId.split("_")[1]}</div>
-                      <div className="text-sm text-slate-400 mt-2">
-                        <div>{Math.round(alert.batteryLevel)}%</div>
-                        <div>{Math.round(alert.signalStrength)}%</div>
+                    )
+                  } else {
+                    // Emplacement vide
+                    return (
+                      <div
+                        key={`empty-${index}`}
+                        className="relative rounded-xl p-4 border-2 border-slate-600 bg-slate-800/30 transition-all duration-300"
+                      >
+                        <div className="text-center">
+                          <div className="w-6 h-6 rounded-full mx-auto mb-3 bg-slate-600 shadow-lg" />
+                          <div className="text-slate-500 font-bold text-base mb-1">LIBRE</div>
+                          <div className="text-slate-600 font-medium text-lg">---</div>
+                          <div className="text-sm text-slate-600 mt-2">
+                            <div>---%</div>
+                            <div>---%</div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    )
+                  }
+                })}
               </div>
             </div>
           </div>
@@ -134,6 +163,10 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
               <span className="text-slate-300 font-medium">Bouton d'urgence</span>
             </div>
             <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 bg-slate-600 rounded-full" />
+              <span className="text-slate-400 font-medium">Emplacement libre</span>
+            </div>
+            <div className="flex items-center space-x-3">
               <div className="w-4 h-4 bg-green-500 rounded-full" />
               <span className="text-slate-300 font-medium">Dispositif actif</span>
             </div>
@@ -146,7 +179,17 @@ export function RealTimeMap({ alerts, devices }: RealTimeMapProps) {
         {/* Alertes récentes */}
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
-            <CardTitle className="text-xl">Alertes Récentes</CardTitle>
+            <CardTitle className="text-xl flex items-center justify-between">
+              <span>Alertes Récentes</span>
+              <Badge variant="outline" className="text-slate-400">
+                {recentAlerts.length}/{displaySlots} affichées
+              </Badge>
+            </CardTitle>
+            {alerts.length > displaySlots && (
+              <p className="text-sm text-orange-400">
+                +{alerts.length - displaySlots} alertes supplémentaires en file d'attente
+              </p>
+            )}
           </CardHeader>
           <CardContent className="space-y-4 max-h-[24rem] overflow-y-auto">
             {recentAlerts.map((alert) => (
